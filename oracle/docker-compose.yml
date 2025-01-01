@@ -1,0 +1,38 @@
+services:
+  redis:
+    image: redis:latest
+    ports:
+      - '6379:6379'
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    command: ['redis-server', '--requirepass', '${REDIS_PASSWORD}']
+    volumes:
+      - redis_data:/data
+    networks:
+      - torch_network
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  server:
+    image: waterso0910/torch-oracle:latest
+    platform: linux/amd64
+    env_file:
+      - .env
+    ports:
+      - '${SERVER_PORT}:3000'
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./logs:/usr/src/app/logs
+    networks:
+      - torch_network
+
+volumes:
+  redis_data:
+networks:
+  torch_network:
+    driver: bridge
